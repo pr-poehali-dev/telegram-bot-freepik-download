@@ -5,102 +5,85 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface FileItem {
+interface DownloadedFile {
   id: string;
   title: string;
-  type: string;
-  thumbnail: string;
-  formats: string[];
-  tags: string[];
+  url: string;
+  format: string;
+  downloadedAt: string;
+  thumbnail?: string;
 }
 
-const mockFiles: FileItem[] = [
+const mockHistory: DownloadedFile[] = [
   {
     id: '1',
-    title: 'Abstract Gradient Background',
-    type: 'Background',
-    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop',
-    formats: ['PSD', 'PNG', 'SVG'],
-    tags: ['gradient', 'abstract', 'colorful']
+    title: 'abstract-gradient-background.psd',
+    url: 'https://freepik.com/premium/abstract-gradient-12345',
+    format: 'PSD',
+    downloadedAt: '2 часа назад',
+    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop'
   },
   {
     id: '2',
-    title: 'Modern UI Kit Design',
-    type: 'UI Kit',
-    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop',
-    formats: ['PSD', 'PNG', 'GIF'],
-    tags: ['ui', 'modern', 'interface']
-  },
-  {
-    id: '3',
-    title: 'Social Media Templates',
-    type: 'Template',
-    thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop',
-    formats: ['PSD', 'PNG'],
-    tags: ['social', 'instagram', 'post']
-  },
-  {
-    id: '4',
-    title: 'Animated Logo Pack',
-    type: 'Logo',
-    thumbnail: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop',
-    formats: ['GIF', 'PNG', 'SVG'],
-    tags: ['logo', 'animation', 'branding']
-  },
-  {
-    id: '5',
-    title: 'Vector Icons Collection',
-    type: 'Icons',
-    thumbnail: 'https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?w=400&h=300&fit=crop',
-    formats: ['SVG', 'PNG'],
-    tags: ['icons', 'vector', 'flat']
-  },
-  {
-    id: '6',
-    title: 'Business Card Mockup',
-    type: 'Mockup',
-    thumbnail: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&h=300&fit=crop',
-    formats: ['PSD', 'PNG'],
-    tags: ['mockup', 'business', 'card']
-  }
-];
-
-const mockHistory: FileItem[] = [
-  {
-    id: 'h1',
-    title: 'Abstract Gradient Background',
-    type: 'Background',
-    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop',
-    formats: ['PNG'],
-    tags: ['gradient', 'abstract']
-  },
-  {
-    id: 'h2',
-    title: 'Modern UI Kit Design',
-    type: 'UI Kit',
-    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop',
-    formats: ['PSD'],
-    tags: ['ui', 'modern']
+    title: 'modern-ui-kit-design.png',
+    url: 'https://freepik.com/premium/ui-kit-67890',
+    format: 'PNG',
+    downloadedAt: 'вчера',
+    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop'
   }
 ];
 
 export default function Index() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
-  const [selectedFormat, setSelectedFormat] = useState<string>('');
+  const [freepikUrl, setFreepikUrl] = useState('');
+  const [selectedFormat, setSelectedFormat] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showFormatSelection, setShowFormatSelection] = useState(false);
 
-  const filteredFiles = mockFiles.filter(file =>
-    file.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    file.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const availableFormats = ['PSD', 'PNG', 'GIF', 'SVG', 'JPG', 'AI', 'EPS'];
 
-  const handleDownload = () => {
-    if (selectedFile && selectedFormat) {
-      alert(`Скачивается ${selectedFile.title} в формате ${selectedFormat}`);
-      setSelectedFile(null);
-      setSelectedFormat('');
+  const isValidFreepikUrl = (url: string) => {
+    return url.includes('freepik.com') || url.includes('flaticon.com');
+  };
+
+  const handleUrlChange = (value: string) => {
+    setFreepikUrl(value);
+    setError('');
+    setShowFormatSelection(false);
+  };
+
+  const handleCheckUrl = () => {
+    if (!freepikUrl.trim()) {
+      setError('Вставьте ссылку на файл');
+      return;
     }
+
+    if (!isValidFreepikUrl(freepikUrl)) {
+      setError('Это не ссылка с Freepik или Flaticon');
+      return;
+    }
+
+    setShowFormatSelection(true);
+    setError('');
+  };
+
+  const handleDownload = async () => {
+    if (!selectedFormat) {
+      setError('Выберите формат');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      setFreepikUrl('');
+      setSelectedFormat('');
+      setShowFormatSelection(false);
+      alert(`Файл скачивается в формате ${selectedFormat}!`);
+    }, 2000);
   };
 
   return (
@@ -112,15 +95,15 @@ export default function Index() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Freepik Bot</h1>
-            <p className="text-sm text-muted-foreground">Премиум-файлы бесплатно</p>
+            <p className="text-sm text-muted-foreground">Скачивай премиум-файлы бесплатно</p>
           </div>
         </div>
 
-        <Tabs defaultValue="search" className="w-full">
+        <Tabs defaultValue="download" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="search" className="gap-2">
-              <Icon name="Search" size={16} />
-              Поиск
+            <TabsTrigger value="download" className="gap-2">
+              <Icon name="Link" size={16} />
+              Скачать
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <Icon name="Clock" size={16} />
@@ -128,56 +111,113 @@ export default function Index() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="search" className="space-y-6">
-            <div className="relative">
-              <Icon name="Search" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Поиск по названию или тегам..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 text-base"
-              />
-            </div>
-
-            <div className="grid gap-4">
-              {filteredFiles.map((file) => (
-                <Card key={file.id} className="overflow-hidden hover:border-primary transition-all cursor-pointer group" onClick={() => setSelectedFile(file)}>
-                  <CardContent className="p-0">
-                    <div className="flex gap-4 p-4">
-                      <div className="relative w-32 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
-                        <img src={file.thumbnail} alt={file.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        <div className="absolute top-2 right-2">
-                          <Badge variant="secondary" className="text-xs font-medium">
-                            {file.type}
-                          </Badge>
-                        </div>
+          <TabsContent value="download" className="space-y-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      Ссылка на файл с Freepik
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Icon name="Link" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="https://freepik.com/premium/..."
+                          value={freepikUrl}
+                          onChange={(e) => handleUrlChange(e.target.value)}
+                          className="pl-10 h-12 text-base"
+                          disabled={isLoading}
+                        />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground mb-2 truncate">{file.title}</h3>
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {file.tags.map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              #{tag}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          {file.formats.map((format) => (
-                            <Badge key={format} className="text-xs">
-                              {format}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <Icon name="ChevronRight" size={20} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
+                      <Button 
+                        onClick={handleCheckUrl} 
+                        className="h-12 px-6"
+                        disabled={isLoading || !freepikUrl.trim()}
+                      >
+                        <Icon name="Search" size={20} />
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
+
+                  {error && (
+                    <Alert variant="destructive">
+                      <Icon name="AlertCircle" size={16} />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {showFormatSelection && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                        <div className="flex items-start gap-3 mb-3">
+                          <Icon name="CheckCircle2" size={20} className="text-primary mt-0.5" />
+                          <div>
+                            <p className="font-medium text-foreground">Файл найден!</p>
+                            <p className="text-sm text-muted-foreground">Выберите формат для скачивания</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-3 block">
+                          Доступные форматы:
+                        </label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {availableFormats.map((format) => (
+                            <Button
+                              key={format}
+                              variant={selectedFormat === format ? 'default' : 'outline'}
+                              className="h-14 text-base font-semibold"
+                              onClick={() => setSelectedFormat(format)}
+                              disabled={isLoading}
+                            >
+                              {format}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full h-14 text-base gap-2"
+                        disabled={!selectedFormat || isLoading}
+                        onClick={handleDownload}
+                      >
+                        {isLoading ? (
+                          <>
+                            <Icon name="Loader2" size={20} className="animate-spin" />
+                            Скачивание...
+                          </>
+                        ) : (
+                          <>
+                            <Icon name="Download" size={20} />
+                            Скачать {selectedFormat}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/30">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <Icon name="Info" size={20} className="text-primary mt-0.5 flex-shrink-0" />
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">Как использовать:</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>Найди нужный файл на freepik.com или flaticon.com</li>
+                      <li>Скопируй ссылку на файл</li>
+                      <li>Вставь ссылку в поле выше</li>
+                      <li>Выбери формат и скачай бесплатно</li>
+                    </ol>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
@@ -196,25 +236,24 @@ export default function Index() {
             ) : (
               <div className="grid gap-4">
                 {mockHistory.map((file) => (
-                  <Card key={file.id} className="overflow-hidden">
+                  <Card key={file.id} className="overflow-hidden hover:border-primary transition-all group">
                     <CardContent className="p-0">
                       <div className="flex gap-4 p-4">
-                        <div className="relative w-32 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
-                          <img src={file.thumbnail} alt={file.title} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground mb-2 truncate">{file.title}</h3>
-                          <div className="flex flex-wrap gap-1.5 mb-2">
-                            {file.tags.map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                #{tag}
-                              </Badge>
-                            ))}
+                        {file.thumbnail && (
+                          <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                            <img src={file.thumbnail} alt={file.title} className="w-full h-full object-cover" />
                           </div>
-                          <Badge className="text-xs">{file.formats[0]}</Badge>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground mb-1 truncate">{file.title}</h3>
+                          <p className="text-xs text-muted-foreground mb-2 truncate">{file.url}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge className="text-xs">{file.format}</Badge>
+                            <span className="text-xs text-muted-foreground">{file.downloadedAt}</span>
+                          </div>
                         </div>
                         <div className="flex items-center">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                             <Icon name="Download" size={20} />
                           </Button>
                         </div>
@@ -227,61 +266,6 @@ export default function Index() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {selectedFile && (
-        <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center z-50 animate-in fade-in duration-200" onClick={() => setSelectedFile(null)}>
-          <Card className="w-full max-w-md m-0 sm:m-4 rounded-t-3xl sm:rounded-2xl animate-in slide-in-from-bottom duration-300" onClick={(e) => e.stopPropagation()}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground mb-1">{selectedFile.title}</h2>
-                  <Badge variant="secondary">{selectedFile.type}</Badge>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedFile(null)}>
-                  <Icon name="X" size={20} />
-                </Button>
-              </div>
-
-              <div className="relative w-full h-48 rounded-xl overflow-hidden mb-4 bg-muted">
-                <img src={selectedFile.thumbnail} alt={selectedFile.title} className="w-full h-full object-cover" />
-              </div>
-
-              <div className="mb-4">
-                <p className="text-sm font-medium text-foreground mb-3">Выберите формат:</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {selectedFile.formats.map((format) => (
-                    <Button
-                      key={format}
-                      variant={selectedFormat === format ? 'default' : 'outline'}
-                      className="h-12"
-                      onClick={() => setSelectedFormat(format)}
-                    >
-                      {format}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-1.5 mb-6">
-                {selectedFile.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
-
-              <Button
-                className="w-full h-12 text-base gap-2"
-                disabled={!selectedFormat}
-                onClick={handleDownload}
-              >
-                <Icon name="Download" size={20} />
-                Скачать {selectedFormat}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
