@@ -14,6 +14,7 @@ interface DownloadedFile {
   format: string;
   downloadedAt: string;
   thumbnail?: string;
+  downloadUrl?: string;
 }
 
 const BACKEND_URL = 'https://functions.poehali.dev/79444133-27f5-4451-8597-61f794bbcae4';
@@ -43,7 +44,8 @@ export default function Index() {
           url: item.url,
           format: item.format,
           downloadedAt: new Date(item.downloaded_at).toLocaleString('ru'),
-          thumbnail: item.thumbnail
+          thumbnail: item.thumbnail,
+          downloadUrl: item.download_url
         })));
       }
     } catch (e) {
@@ -123,8 +125,16 @@ export default function Index() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        alert(`✅ Файл "${fileInfo?.title}" добавлен в историю!\n\nФормат: ${selectedFormat}\n\nОткрой вкладку "История" чтобы увидеть его.`);
+      if (response.ok && data.download_url) {
+        const link = document.createElement('a');
+        link.href = data.download_url;
+        link.download = `${fileInfo?.title || 'file'}.${selectedFormat.toLowerCase()}`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`✅ Файл "${fileInfo?.title}" скачан!\n\nФормат: ${selectedFormat}\n\nПроверь папку "Загрузки"`);
         setFreepikUrl('');
         setSelectedFormat('');
         setShowFormatSelection(false);
@@ -307,7 +317,22 @@ export default function Index() {
                           </div>
                         </div>
                         <div className="flex items-center">
-                          <Button variant="ghost" size="icon" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            onClick={() => {
+                              if (file.downloadUrl) {
+                                const link = document.createElement('a');
+                                link.href = file.downloadUrl;
+                                link.download = `${file.title}.${file.format.toLowerCase()}`;
+                                link.target = '_blank';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }
+                            }}
+                          >
                             <Icon name="Download" size={20} />
                           </Button>
                         </div>
