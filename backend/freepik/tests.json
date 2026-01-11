@@ -1,0 +1,41 @@
+{
+  "tests": [
+    {
+      "name": "Test invalid URL",
+      "method": "POST",
+      "body": {
+        "url": "https://google.com",
+        "format": "PNG",
+        "user_id": 123
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test missing URL",
+      "method": "POST",
+      "body": {
+        "format": "PNG",
+        "user_id": 123
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test get history",
+      "method": "GET",
+      "path": "/?user_id=123",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "history": []
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

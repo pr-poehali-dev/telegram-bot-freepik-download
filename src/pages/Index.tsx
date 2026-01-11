@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,24 +16,7 @@ interface DownloadedFile {
   thumbnail?: string;
 }
 
-const mockHistory: DownloadedFile[] = [
-  {
-    id: '1',
-    title: 'abstract-gradient-background.psd',
-    url: 'https://freepik.com/premium/abstract-gradient-12345',
-    format: 'PSD',
-    downloadedAt: '2 часа назад',
-    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop'
-  },
-  {
-    id: '2',
-    title: 'modern-ui-kit-design.png',
-    url: 'https://freepik.com/premium/ui-kit-67890',
-    format: 'PNG',
-    downloadedAt: 'вчера',
-    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop'
-  }
-];
+const BACKEND_URL = 'https://functions.poehali.dev/79444133-27f5-4451-8597-61f794bbcae4';
 
 export default function Index() {
   const [freepikUrl, setFreepikUrl] = useState('');
@@ -41,8 +24,32 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showFormatSelection, setShowFormatSelection] = useState(false);
+  const [availableFormats, setAvailableFormats] = useState<string[]>(['PSD', 'PNG', 'GIF', 'SVG', 'JPG', 'AI', 'EPS']);
+  const [fileInfo, setFileInfo] = useState<any>(null);
+  const [history, setHistory] = useState<DownloadedFile[]>([]);
 
-  const availableFormats = ['PSD', 'PNG', 'GIF', 'SVG', 'JPG', 'AI', 'EPS'];
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const loadHistory = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}?user_id=1`);
+      const data = await response.json();
+      if (data.history) {
+        setHistory(data.history.map((item: any) => ({
+          id: item.id.toString(),
+          title: item.title,
+          url: item.url,
+          format: item.format,
+          downloadedAt: new Date(item.downloaded_at).toLocaleString('ru'),
+          thumbnail: item.thumbnail
+        })));
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки истории:', e);
+    }
+  };
 
   const isValidFreepikUrl = (url: string) => {
     return url.includes('freepik.com') || url.includes('flaticon.com');
@@ -54,7 +61,7 @@ export default function Index() {
     setShowFormatSelection(false);
   };
 
-  const handleCheckUrl = () => {
+  const handleCheckUrl = async () => {
     if (!freepikUrl.trim()) {
       setError('Вставьте ссылку на файл');
       return;
@@ -65,8 +72,34 @@ export default function Index() {
       return;
     }
 
-    setShowFormatSelection(true);
+    setIsLoading(true);
     setError('');
+
+    try {
+      const response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          url: freepikUrl,
+          format: 'PNG',
+          user_id: 1
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.file_info) {
+        setFileInfo(data.file_info);
+        setAvailableFormats(data.file_info.available_formats || ['PSD', 'PNG', 'SVG']);
+        setShowFormatSelection(true);
+      } else {
+        setError(data.error || 'Не удалось получить информацию о файле');
+      }
+    } catch (e) {
+      setError('Ошибка подключения к серверу');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDownload = async () => {
@@ -76,14 +109,35 @@ export default function Index() {
     }
 
     setIsLoading(true);
-    
-    setTimeout(() => {
+
+    try {
+      const response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          url: freepikUrl,
+          format: selectedFormat,
+          user_id: 1
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`✅ Файл "${fileInfo?.title}" добавлен в историю!\n\nФормат: ${selectedFormat}\n\nОткрой вкладку "История" чтобы увидеть его.`);
+        setFreepikUrl('');
+        setSelectedFormat('');
+        setShowFormatSelection(false);
+        setFileInfo(null);
+        await loadHistory();
+      } else {
+        setError(data.error || 'Ошибка скачивания');
+      }
+    } catch (e) {
+      setError('Ошибка подключения к серверу');
+    } finally {
       setIsLoading(false);
-      setFreepikUrl('');
-      setSelectedFormat('');
-      setShowFormatSelection(false);
-      alert(`Файл скачивается в формате ${selectedFormat}!`);
-    }, 2000);
+    }
   };
 
   return (
@@ -221,7 +275,7 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            {mockHistory.length === 0 ? (
+            {history.length === 0 ? (
               <Card className="p-12">
                 <div className="flex flex-col items-center justify-center text-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
@@ -235,7 +289,7 @@ export default function Index() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {mockHistory.map((file) => (
+                {history.map((file) => (
                   <Card key={file.id} className="overflow-hidden hover:border-primary transition-all group">
                     <CardContent className="p-0">
                       <div className="flex gap-4 p-4">
